@@ -25,10 +25,10 @@ def save_checkpoint(epoch, model, optimizer, scheduler, path):
 
 save_checkpoint = False
 
-for cluster in ['alerting']: #, 'alerting', 'daily_life']: 
+for cluster in ['basic']: 
     for nframes in [32]:
-        root_dir = '/home/Dataset/aggregorio_videos_pytorch_boxcrop/{}'.format(cluster)
-        dist_dir = 'stats/stats_boxcrop/{}/32_ds_{}_frame_center'.format(cluster, nframes)
+        root_dir = '/home/Dataset/aggregorio_videos_pytorch_centercrop/{}'.format(cluster)
+        dist_dir = 'stats/stats_3layer/{}/32_ds_{}_frame_center'.format(cluster, nframes)
 
         if not os.path.exists(dist_dir):
             os.makedirs(dist_dir)
@@ -46,7 +46,7 @@ for cluster in ['alerting']: #, 'alerting', 'daily_life']:
         downsample = 2
 
         dataset_train_path = root_dir+'/train'
-        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=False)
+        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=True)
         loader_train = data.DataLoader(
                                 dataset_train,
                                 batch_size=batch_size,
@@ -67,16 +67,17 @@ for cluster in ['alerting']: #, 'alerting', 'daily_life']:
 
         num_classes = len(dataset_train.classes)
 
-        model_weight =  'model/alerting.pt'
+        model_weight =  'model/{}.pt'.format(cluster)
         dropout_prob=0.
         model = I3D(num_classes=num_classes, modality='rgb', dropout_prob=dropout_prob)
         model.load_state_dict(torch.load(model_weight))
 
 
-        for param in model.parameters():
+        for name,param in model.named_parameters():
             param.requires_grad = False
-        for param in model.conv3d_0c_1x1.conv3d.parameters():
-            param.requires_grad = True
+        for name,param in model.named_parameters():
+            if name.split('.')[0] == 'mixed_5c' or name.split('.')[0] == 'conv3d_0c_1x1':
+                param.requires_grad = True
 
         # Send the model to GPU
         model.cuda()

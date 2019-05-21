@@ -27,7 +27,7 @@ save_checkpoint = False
 for cluster in ['basic', 'alerting', 'daily_life']: 
     for nframes in [32]:
         root_dir = '/home/Dataset/aggregorio_videos_pytorch_centercrop/{}'.format(cluster)
-        dist_dir = 'stats/stats_centercrop_proposal/{}/32_ds_{}_frame_center_v2'.format(cluster, nframes)
+        dist_dir = 'stats/stats_boxcrop_3layer/{}/32_ds_{}_frame_center_v2'.format(cluster, nframes)
 
         os.makedirs(dist_dir)
         if save_checkpoint:
@@ -40,11 +40,11 @@ for cluster in ['basic', 'alerting', 'daily_life']:
         plot_path = dist_dir+"/plot.png"
 
         batch_size = 32
-        num_epochs = 75
+        num_epochs = 50
         downsample = 2
 
         dataset_train_path = root_dir+'/train'
-        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=False, temporal_annotation='/home/Dataset/crop_temp.json')
+        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=False, temporal_annotation=None)
         loader_train = data.DataLoader(
                                 dataset_train,
                                 batch_size=batch_size,
@@ -54,7 +54,7 @@ for cluster in ['basic', 'alerting', 'daily_life']:
                             )
 
         dataset_test_path = root_dir+'/test'
-        dataset_test = Dataset(dataset_test_path, 32, 2, balance=False, padding=False, temporal_annotation='/home/Dataset/crop_temp.json')
+        dataset_test = Dataset(dataset_test_path, 32, 2, balance=False, padding=False, temporal_annotation=None)
         loader_test = data.DataLoader(
                                 dataset_test,
                                 batch_size=batch_size,
@@ -82,6 +82,10 @@ for cluster in ['basic', 'alerting', 'daily_life']:
                     use_bias=True,
                     use_bn=False)
 
+        for name,param in model.named_parameters():
+            if name.split('.')[0] == 'mixed_5c':
+                param.requires_grad = True
+
         # Send the model to GPU
         model.cuda()
 
@@ -95,11 +99,14 @@ for cluster in ['basic', 'alerting', 'daily_life']:
                 print("\t",name)
 
         # Observe that all parameters are being optimized
-        w_decay = 0.01
+        w_decay = 0.001
+        if cluster == 'basic':
+            w_decay = 0.01
+
         optimizer = optim.SGD(params_to_update, lr=0.1, momentum=0.9, weight_decay=w_decay)
         criterion = nn.CrossEntropyLoss()
 
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [20,60], gamma=0.1, last_epoch=-1)
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [15,40], gamma=0.1, last_epoch=-1)
 
         since = time.time()
         train_acc_history = []
