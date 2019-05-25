@@ -13,6 +13,7 @@ class Dataset(data.Dataset):
     def __init__(self, root_dataset, n_frames, campionamento=1, balance=True, padding=True, temporal_annotation=None):
         #if padding False remove file with less than n_frames
         #if balance True balance dataset
+        #if temporal_Annotation = path_to_file, cut video given a start, end
         self.root_dataset = root_dataset
 
         self.list_videos = []

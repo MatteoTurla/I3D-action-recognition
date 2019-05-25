@@ -25,10 +25,10 @@ def save_checkpoint(epoch, model, optimizer, scheduler, path):
 
 save_checkpoint = False
 
-for cluster in ['basic']: 
+for cluster in ['daily_life']: 
     for nframes in [32]:
-        root_dir = '/home/Dataset/aggregorio_videos_pytorch_centercrop/{}'.format(cluster)
-        dist_dir = 'stats/stats_3layer/{}/32_ds_{}_frame_center'.format(cluster, nframes)
+        root_dir = '/home/Dataset/aggregorio_videos_pytorch_boxcrop/{}'.format(cluster)
+        dist_dir = 'stats/stats_4layer/{}/32_ds_{}_frame_center'.format(cluster, nframes)
 
         if not os.path.exists(dist_dir):
             os.makedirs(dist_dir)
@@ -46,23 +46,23 @@ for cluster in ['basic']:
         downsample = 2
 
         dataset_train_path = root_dir+'/train'
-        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=True)
+        dataset_train = Dataset(dataset_train_path, 32, 2, balance=True, padding=False)
         loader_train = data.DataLoader(
                                 dataset_train,
                                 batch_size=batch_size,
                             	shuffle=True,
                             	pin_memory=True,
-                                num_workers = 4
+                                num_workers = 2
                             )
 
         dataset_test_path = root_dir+'/test'
-        dataset_test = Dataset(dataset_test_path, 32, 2, balance=False, padding=True)
+        dataset_test = Dataset(dataset_test_path, 32, 2, balance=False, padding=False)
         loader_test = data.DataLoader(
                                 dataset_test,
                                 batch_size=batch_size,
                             	shuffle=False,
                             	pin_memory=True,
-                                num_workers = 4
+                                num_workers = 2
                             )
 
         num_classes = len(dataset_train.classes)
@@ -76,7 +76,7 @@ for cluster in ['basic']:
         for name,param in model.named_parameters():
             param.requires_grad = False
         for name,param in model.named_parameters():
-            if name.split('.')[0] == 'mixed_5c' or name.split('.')[0] == 'conv3d_0c_1x1':
+            if name.split('.')[0] == 'mixed_5b' or name.split('.')[0] == 'mixed_5c' or name.split('.')[0] == 'conv3d_0c_1x1':
                 param.requires_grad = True
 
         # Send the model to GPU
@@ -94,7 +94,7 @@ for cluster in ['basic']:
         # Observe that all parameters are being optimized
         w_decay = 0.01
         lr= 0.1
-        steps= [20,60]
+        steps= [10,15]
         optimizer = optim.SGD(params_to_update, lr=lr, momentum=0.9, weight_decay=w_decay)
         criterion = nn.CrossEntropyLoss()
 
